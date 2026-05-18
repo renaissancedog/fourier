@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title></title>
+    <style>
+      * {
+        font-size: 1.1em;
+        margin-top: 10px;
+        margin-bottom: 10px;
+      }
+      main {
+        margin-left: 10px;
+      }
+      h1 {
+        font-size: 2em;
+      }
+      h2 {
+        font-size: 1.5em;
+        font-weight: normal;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Fourier Transform</h1>
+    <h2>Math is cool! Read more about it <a href="https://en.wikipedia.org/wiki/Fourier_transform">here</a>.</h2>
+    <p>Instructions: Draw on canvas in one stroke. Try to draw a closed loop.</p>
+    <button onclick="clearCanvas()">Clear Canvas</button>
+    <button onclick="render()">Render</button>
+    <div id="canvas-container"></div>
+    <p id="info"></p>
+    <p>Epicycle Info</p>
+    <table id="epicycle-table">
+      <thead>
+        <tr>
+          <th>Circle #</th>
+          <th>Frequency ($k$)</th>
+          <th>Amplitude (Radius)</th>
+          <th>Phase (Radians)</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        </tbody>
+    </table>
+  </body>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/p5@1/lib/p5.min.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+</html>
