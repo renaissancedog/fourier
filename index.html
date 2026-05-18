@@ -21,6 +21,10 @@
         font-size: 1.5em;
         font-weight: normal;
       }
+      th, td {
+        border: 1px solid black; /* Adds the actual lines */
+        padding: 8px;            /* Adds space inside cells for readability */
+      }
     </style>
   </head>
   <body>
@@ -35,10 +39,10 @@
     <table id="epicycle-table">
       <thead>
         <tr>
-          <th>Circle #</th>
-          <th>Frequency ($k$)</th>
-          <th>Amplitude (Radius)</th>
-          <th>Phase (Radians)</th>
+          <th>Circle Number</th>
+          <th>Frequency</th>
+          <th>Radius</th>
+          <th>Starting Phase (Radians)</th>
         </tr>
       </thead>
       <tbody id="table-body">
