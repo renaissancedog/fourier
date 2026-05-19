@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="styles.css">
+    <title>Documentation for the Budget Fourier Transform Simulator</title>
+  </head>
+  <body>
+    <a href="./index.html">Back to home</a>
+    <h1>Documentation for the Budget Fourier Transform Simulator</h1>
+
+    <p>
+      This simulation uses a Discrete Fourier Transform (<a href="https://en.wikipedia.org/wiki/Discrete_Fourier_transform">DFT</a>) to decompose a hand-drawn path into a sum of rotating circles called an epicycle.
+      It works in three steps: <a href="https://p5js.org/">p5.js</a> collects mouse coordinates, a resampling algorithm spaces them evenly along the path, and the DFT converts them into a bunch of spinning circles.
+    </p>
+
+    <h2>Step 0 - Tech Stack</h2>
+    <p>The backend of this project was coded in Javascript because I wanted to make it run on a website. The frontend uses HTML, p5.js, and really ugly CSS.</p>
+
+    <h2>Step 1 - Get Mouse Inputs</h2>
+    <p>I use the p5.js canvas, the mouseDragged function, and the mouseX and mouseY variables. The rate of capture of mouse movements is determined by the frame rate (FPS).</p>
+
+    <h2>Step 2 - Resampling</h2>
+    <p>
+      Mouse inputs are unevenly spaced (for example, more are clustered in corners and less are around straight lines).
+      To better reconstruct the shape, we fix that by resampling the points so they are evenly spaced along the path.
+      Those coordinates are then fed into Step 3.
+    </p>
+
+    <h2>Step 3 - The DFT (the mathy part)</h2>
+    <p>I learned this math from 3Blue1Brown's <a href="https://www.youtube.com/watch?v=r6sGWTCMz2k">video</a>. Check it out!</p>
+    <p>
+      For every integer frequency f from 0 to N−1, the DFT computes a complex number coefficient X[f] that determines the amplitude and phase of the corresponding epicycle.
+      It does so by first looping over all the points from Step 2 and representing them as complex numbers z[n] = x[n] + iy[n], where x[n] and y[n] are the x and y coordinates of the nth point.
+      Then, for each frequency f, it computes the coefficient X[f] as:
+    </p>
+    <p>
+      <em>X[f] = (1/N) &Sigma; z[n] &middot; e<sup>−2&pi;ifn/N</sup></em>
+    </p>
+    <p>(This formula is due to the DFT math. It is explained in the 3B1B video much better than I could through a wall of text.)</p>
+    <p>
+      Expanding via Euler's formula, e<sup>i&theta;</sup> = cos&theta; + i·sin&theta;, and multiplying out the complex product (x + iy)(cos&theta; + i·sin&theta;) gives the real and imaginary parts of X[f]:
+    </p>
+    <p>
+      <em>re = &Sigma;(x[n]·cos&theta; − y[n]·sin&theta;)/N</em><br>
+      <em>im = &Sigma;(x[n]·sin&theta; + y[n]·cos&theta;)/N</em>
+    </p>
+    <p>where &theta; = -2&pi;fn/N. (&theta; is negative because p5.js's y increases as it goes down, which flips the direction of rotation.)</p>
+    <p>
+      The amplitude (radius) and phase (starting angle) of the epicycle for frequency f are then:
+    </p>
+    <p>
+      <em>amplitude = &radic;(re&sup2; + im&sup2;)</em><br>
+      <em>phase = arctan(im, re)</em>
+    </p>
+
+    <h2>Step 3.5 - Frequency interpretation</h2>
+    <p>
+      The DFT produces N frequencies. For frequencies above N/2, the standard convention is to interpret them as negative (the circle spins in reverse), so the simulator remaps any f &gt; N/2 to f − N.
+      The results are sorted by amplitude so the largest - most visually significant - circles are drawn first.
+    </p>
+    <p>
+      I do not render epicycles below a minimum amplitude threshold (0.5px), since they are too small to be seen.
+      This does not affect the accuracy of the path drawn.
+    </p>
+    <p>
+      The "accuracy" filter represents the cumulative amplitude of the drawn epicycles divided by the total amplitude of all epicycles.
+      For example, 99% accuracy means the epicycles we use to do the math and draw the path account for 99% of the total amplitude, and the remaining 1% is ignored.
+    </p>
+  </body>
+</html>

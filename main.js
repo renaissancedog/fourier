@@ -1,9 +1,11 @@
 // constants and variables
 const SPEED=10; // period of the epicycles in seconds
-const FPS=60;
-let array = [];
-let path = [];
-let dftArray = [];
+const FPS=240;
+const ANIMATE_THRESHOLD = 0.5; // amplitude at below which we don't animate the specific circle
+let amp_threshold=0.98; // after finding all dft amplitudes, only take those with cumulative sum greater than this
+let mouseArray = []; // array of mouse coordinates
+let path = []; // path of the epicycles
+let dftArray = []; // array of dft results
 let drawing = false;
 let t=0;
 
@@ -12,6 +14,7 @@ let t=0;
 function setup() {
   let cnv=createCanvas(800, 600);
   cnv.parent('canvas-container');
+
   background(0);
   strokeWeight(3);
   noFill();
@@ -20,7 +23,7 @@ function setup() {
 
 function clearCanvas() {
   background(0);
-  array=[];
+  mouseArray=[];
   path=[];
 }
 
@@ -36,17 +39,19 @@ function mouseDragged() {
   stroke(255);
   line(pmouseX, pmouseY, mouseX, mouseY);
   if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) {
-    drawing = false;
+    mouseReleased();
     return;
   }
-  array.push([mouseX, mouseY]);
+  mouseArray.push([mouseX, mouseY]);
 }
 
 function mouseReleased() {
   if (!drawing) return;
   drawing = false;
-  dftArray = dft(resample(array, array.length).map(([x, y]) => ({ x, y }))); 
+  amp_threshold = document.getElementById('threshold').value;
+  dftArray = dft(resample(mouseArray, mouseArray.length).map(([x, y]) => ({ x, y })), amp_threshold); 
   t=0;
+  path=[];
   
   // update info and table
   document.getElementById("info").textContent = "Number of epicycles: " + dftArray.length;
@@ -55,13 +60,13 @@ function mouseReleased() {
 
 // draw loop
 function draw() {
-  if (drawing || array.length === 0) return;
+  if (drawing || mouseArray.length === 0) return;
   background(0);
   
   // redraw original path
   stroke(255,0,0);
-  for (let i = 1; i < array.length; i++) {
-    line(array[i - 1][0], array[i - 1][1], array[i][0], array[i][1]);
+  for (let i = 1; i < mouseArray.length; i++) {
+    line(mouseArray[i - 1][0], mouseArray[i - 1][1], mouseArray[i][0], mouseArray[i][1]);
   }
 
   // draw the circles
@@ -77,7 +82,7 @@ function draw() {
     const freq = dftArray[i].freq;
     const phase = dftArray[i].phase;
     const N = dftArray.length;
-    if (amp>1) {
+    if (amp>ANIMATE_THRESHOLD) {
       circle(x, y, amp * 2);
       line(x, y, x + amp * cos(-freq * t + phase), y + amp * sin(-freq * t + phase));
     }
@@ -109,7 +114,7 @@ function updateHtmlTable() {
     row.innerHTML = `
       <td>${i + 1}</td>
       <td>${data.freq}</td>
-      <td>${data.amp.toFixed(2)} px</td>
+      <td>${data.amp.toFixed(4)} px</td>
       <td>${data.phase.toFixed(4)} rad</td>
     `;
     tbody.appendChild(row);
@@ -160,40 +165,59 @@ function resample(points, N) {
     length = Math.sqrt((points[i][0] - x) ** 2 + (points[i][1] - y) ** 2);
     currentLength += length;
   }
-  console.log(resampled);
   return resampled;
 }
 
 // the mathy part
-// above N/2, the frequencies are actually negative, so we make that conversion here
-function dft(path) {
+// above N/2, we represent the frequencies as a small negative instead of a large positive, so we make that conversion here
+function dft(path, amp_threshold) {
   const N = path.length;
   let result = [];
 
-  for (let k = 0; k < N; k++) {
+  // for every frequency
+  for (let f = 0; f < N; f++) {
     let re = 0, im = 0;
 
+    // for every point in the path given
     for (let n = 0; n < N; n++) {
-      const angle = -2 * Math.PI * k * n / N;
+      // calculate angle
+      const angle = -2 * Math.PI * f * n / N;
+
+      // now we do f(x) * path[n] = (x+i*y)(cos+i*sin) = (x*cos-y*sin + i*(x*sin+y*cos))
+      // this is because of dft math
       const cos = Math.cos(angle);
       const sin = Math.sin(angle);
-      // path[n] = {x, y} or {re, im}
       re += path[n].x * cos - path[n].y * sin;
       im += path[n].x * sin + path[n].y * cos;
     }
+    re /= N;
+    im /= N;
 
-    let freq = k;
+    let freq = f;
     if (freq > N / 2) {
       freq = freq - N;
     }
     result.push({
       freq: freq,
-      amp: Math.sqrt(re*re + im*im) / N,
+      amp: Math.sqrt(re*re + im*im),
       phase: Math.atan2(im, re)
     });
   }
 
   result = result.sort((a, b) => b.amp - a.amp);
-  console.log(result);
+  totalAmp = result.reduce((sum, val) => sum + val.amp, 0);
+  cutoff = amp_threshold * totalAmp;
+  let cumulativeAmp = 0;
+  result = result.filter((val) => {
+    cumulativeAmp += val.amp;
+    return cumulativeAmp <= cutoff;
+  });
+
   return result;
+}
+
+document.getElementById('threshold').oninput = function() {
+  drawing = true;
+  document.getElementById('threshold-out').textContent = Math.round(this.value * 1000)/10 + '%';
+  mouseReleased(); // recalculate DFT with new threshold
 }

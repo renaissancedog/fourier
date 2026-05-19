@@ -4,38 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title></title>
-    <style>
-      * {
-        font-size: 1.1em;
-        margin-top: 10px;
-        margin-bottom: 10px;
-      }
-      main {
-        margin-left: 10px;
-      }
-      h1 {
-        font-size: 2em;
-      }
-      h2 {
-        font-size: 1.5em;
-        font-weight: normal;
-      }
-      th, td {
-        border: 1px solid black; /* Adds the actual lines */
-        padding: 8px;            /* Adds space inside cells for readability */
-      }
-    </style>
+    <link rel="stylesheet" href="styles.css"></link>
+    <title>Budget Fourier Transform Simulator</title>
   </head>
   <body>
-    <h1>Fourier Transform</h1>
-    <h2>Math is cool! Read more about it <a href="https://en.wikipedia.org/wiki/Fourier_transform">here</a>.</h2>
-    <p>Instructions: Draw on canvas in one stroke. Try to draw a closed loop.</p>
+    <h1>Budget Fourier Transform Simulator</h1>
+    <h2>Math and coding can do awesome stuff! Read more about how this thing works <a href="./docs.html">here</a>.</h2>
+    <p>Instructions: Draw on canvas in one stroke. Try to draw a closed loop. Don't draw too fast or the software won't capture your mouse movements accurately.</p>
     <button onclick="clearCanvas()">Clear Canvas</button>
-    <button onclick="render()">Render</button>
     <div id="canvas-container"></div>
     <p id="info"></p>
-    <p>Epicycle Info</p>
+    <div>
+      <label for="threshold">Accuracy: <span id="threshold-out">98%</span></label>
+      <input type="range" id="threshold" min="0.8" max="1.0" step="0.001" value="0.98">
+    </div>
     <table id="epicycle-table">
       <thead>
         <tr>
