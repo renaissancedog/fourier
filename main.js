@@ -58,6 +58,23 @@ function mouseReleased() {
   updateHtmlTable();
 }
 
+// mobile support
+function touchEnded() { mouseReleased(); return false;}
+function touchStarted() {
+  if (touches[0].x > 0 && touches[0].x < width && 
+      touches[0].y > 0 && touches[0].y < height) {
+    mousePressed();
+    return false;
+  }
+  return;
+}
+
+function touchMoved() {
+  if (!drawing) return;
+  mouseDragged();
+  return false;
+}
+
 // draw loop
 function draw() {
   if (drawing || mouseArray.length === 0) return;
