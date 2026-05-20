@@ -1,8 +1,8 @@
 // constants and variables
-const SPEED=10; // period of the epicycles in seconds
 const FPS=240;
 const ANIMATE_THRESHOLD = 0.5; // amplitude at below which we don't animate the specific circle
-let amp_threshold=0.98; // after finding all dft amplitudes, only take those with cumulative sum greater than this
+let amp_threshold=0.99; // after finding all dft amplitudes, only take those with cumulative sum greater than this
+let speed=10; // period of the epicycles in seconds
 let mouseArray = []; // array of mouse coordinates
 let path = []; // path of the epicycles
 let dftArray = []; // array of dft results
@@ -48,7 +48,8 @@ function mouseDragged() {
 function mouseReleased() {
   if (!drawing) return;
   drawing = false;
-  amp_threshold = document.getElementById('threshold').value;
+  amp_threshold = document.getElementById('accuracy_slider').value;
+  speed = document.getElementById('speed_slider').value;
   dftArray = dft(resample(mouseArray, mouseArray.length).map(([x, y]) => ({ x, y })), amp_threshold); 
   t=0;
   path=[];
@@ -90,8 +91,8 @@ function draw() {
   stroke(255);
   let x=0
   let y=0;
-  t += (deltaTime / (SPEED * 1000)) * 2 * Math.PI;
-  let currentPeriodTime = (millis() / 1000) % SPEED / SPEED * 2 * Math.PI;
+  t += (deltaTime / (speed * 1000)) * 2 * Math.PI;
+  let currentPeriodTime = (millis() / 1000) % speed / speed * 2 * Math.PI;
 
   // the circle part
   for (let i = 0; i < dftArray.length; i++) {
@@ -233,8 +234,14 @@ function dft(path, amp_threshold) {
   return result;
 }
 
-document.getElementById('threshold').oninput = function() {
+document.getElementById('accuracy_slider').oninput = function() {
   drawing = true;
-  document.getElementById('threshold-out').textContent = Math.round(this.value * 1000)/10 + '%';
+  document.getElementById('accuracy_out').textContent = Math.round(this.value * 1000)/10 + '%';
   mouseReleased(); // recalculate DFT with new threshold
+}
+
+document.getElementById('speed_slider').oninput = function() {
+  drawing = true;
+  document.getElementById('speed_out').textContent = Math.round(this.value * 10)/10 + ' seconds';
+  mouseReleased(); // rerun drawing loop
 }
