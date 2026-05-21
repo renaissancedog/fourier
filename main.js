@@ -55,7 +55,7 @@ function mouseReleased() {
   path=[];
   
   // update info and table
-  document.getElementById("info").textContent = "Number of epicycles: " + dftArray.length;
+  document.getElementById("info").textContent = "Number of circles: " + dftArray.length;
   updateHtmlTable();
 }
 
