@@ -6,6 +6,7 @@ let speed=10; // period of the epicycles in seconds
 let mouseArray = []; // array of mouse coordinates
 let path = []; // path of the epicycles
 let dftArray = []; // array of dft results
+let filteredDftArray = []; // dftArray, but filtered by amplitude cutoff
 let drawing = false;
 let t=0;
 
@@ -47,17 +48,22 @@ function mouseDragged() {
 
 function mouseReleased() {
   if (!drawing) return;
+  if (mouseX < 0 || mouseX > width || mouseY < 0 || mouseY > height) {
+    return;
+  }
   drawing = false;
   amp_threshold = document.getElementById('accuracy_slider').value;
   speed = document.getElementById('speed_slider').value;
-  dftArray = dft(resample(mouseArray, mouseArray.length).map(([x, y]) => ({ x, y })), amp_threshold); 
+  dftArray = dft(resample(mouseArray, mouseArray.length).map(([x, y]) => ({ x, y })));
+  filterDft();
   t=0;
   path=[];
   
   // update info and table
-  document.getElementById("info").textContent = "Number of circles: " + dftArray.length;
+  document.getElementById("info").textContent = "Number of circles: " + filteredDftArray.length;
   updateHtmlTable();
 }
+
 
 // mobile support
 function touchEnded() { mouseReleased(); return false;}
@@ -69,7 +75,6 @@ function touchStarted() {
   }
   return;
 }
-
 function touchMoved() {
   if (!drawing) return;
   mouseDragged();
@@ -95,11 +100,11 @@ function draw() {
   let currentPeriodTime = (millis() / 1000) % speed / speed * 2 * Math.PI;
 
   // the circle part
-  for (let i = 0; i < dftArray.length; i++) {
-    const amp = dftArray[i].amp;
-    const freq = dftArray[i].freq;
-    const phase = dftArray[i].phase;
-    const N = dftArray.length;
+  for (let i = 0; i < filteredDftArray.length; i++) {
+    const amp = filteredDftArray[i].amp;
+    const freq = filteredDftArray[i].freq;
+    const phase = filteredDftArray[i].phase;
+    const N = filteredDftArray.length;
     if (amp>ANIMATE_THRESHOLD) {
       circle(x, y, amp * 2);
       line(x, y, x + amp * cos(-freq * t + phase), y + amp * sin(-freq * t + phase));
@@ -122,11 +127,41 @@ function draw() {
   }
 }
 
+function filterDft() {
+  const totalAmp = dftArray.reduce(((sum, val) => sum + val.amp), 0);
+  const cutoff = amp_threshold * totalAmp;
+  let cumulativeAmp = 0;
+  filteredDftArray=[];
+  for (let i=0; i<dftArray.length; i++) {
+    let val=dftArray[i];
+    cumulativeAmp+=val.amp;
+    filteredDftArray.push(val);
+    if (cumulativeAmp>cutoff) {
+      break;
+    }
+  }
+  t=0;
+  path=[];
+  document.getElementById("info").textContent = "Number of circles: " + filteredDftArray.length;
+  updateHtmlTable();
+}
+
+document.getElementById('accuracy_slider').oninput = function() {
+  amp_threshold = document.getElementById('accuracy_slider').value;
+  document.getElementById('accuracy_out').textContent = Math.round(this.value * 1000)/10 + '%';
+  filterDft(); // recalculate DFT with new threshold
+}
+
+document.getElementById('speed_slider').oninput = function() {
+  speed = document.getElementById('speed_slider').value;
+  document.getElementById('speed_out').textContent = Math.round(this.value * 10)/10 + ' seconds';
+}
+
 function updateHtmlTable() {
   const tbody = document.getElementById('table-body');
   tbody.innerHTML = '';
-  for (let i = 0; i < dftArray.length; i++) {
-    const data = dftArray[i];
+  for (let i = 0; i < filteredDftArray.length; i++) {
+    const data = filteredDftArray[i];
     const row = document.createElement('tr');
 
     row.innerHTML = `
@@ -188,7 +223,7 @@ function resample(points, N) {
 
 // the mathy part
 // above N/2, we represent the frequencies as a small negative instead of a large positive, so we make that conversion here
-function dft(path, amp_threshold) {
+function dft(path) {
   const N = path.length;
   let result = [];
 
@@ -223,25 +258,5 @@ function dft(path, amp_threshold) {
   }
 
   result = result.sort((a, b) => b.amp - a.amp);
-  totalAmp = result.reduce((sum, val) => sum + val.amp, 0);
-  cutoff = amp_threshold * totalAmp;
-  let cumulativeAmp = 0;
-  result = result.filter((val) => {
-    cumulativeAmp += val.amp;
-    return cumulativeAmp <= cutoff;
-  });
-
   return result;
-}
-
-document.getElementById('accuracy_slider').oninput = function() {
-  drawing = true;
-  document.getElementById('accuracy_out').textContent = Math.round(this.value * 1000)/10 + '%';
-  mouseReleased(); // recalculate DFT with new threshold
-}
-
-document.getElementById('speed_slider').oninput = function() {
-  drawing = true;
-  document.getElementById('speed_out').textContent = Math.round(this.value * 10)/10 + ' seconds';
-  mouseReleased(); // rerun drawing loop
 }
