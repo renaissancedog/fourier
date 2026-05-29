@@ -15,7 +15,6 @@ let t=0;
 function setup() {
   let cnv=createCanvas(800, 600);
   cnv.parent('canvas-container');
-
   background(0);
   strokeWeight(3);
   noFill();
@@ -128,11 +127,15 @@ function draw() {
 }
 
 function filterDft() {
-  const totalAmp = dftArray.reduce(((sum, val) => sum + val.amp), 0);
+  let totalAmp=0;
+  for (let i=1; i<dftArray.length; i++) { // ignore first index because it doesn't move
+    totalAmp+=dftArray[i].amp;
+  }
   const cutoff = amp_threshold * totalAmp;
   let cumulativeAmp = 0;
   filteredDftArray=[];
-  for (let i=0; i<dftArray.length; i++) {
+  filteredDftArray.push(dftArray[0]); // always include the first component
+  for (let i=1; i<dftArray.length; i++) {
     let val=dftArray[i];
     cumulativeAmp+=val.amp;
     filteredDftArray.push(val);
